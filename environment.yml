@@ -1,0 +1,17 @@
+name: ipi-validation
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas
+  - numpy
+  - scipy
+  - pyyaml
+  - tqdm
+  - pip
+  - pip:
+      - openai==2.43.0
+      - anthropic==0.111.0
+      - datasets>=2.19
+      - jsonschema>=4.21
+      - tenacity>=8.2

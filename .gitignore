@@ -1,0 +1,12 @@
+.env
+*.key
+secrets*
+__pycache__/
+*.pyc
+*_err.txt
+*_error.txt
+smoke_*.jsonl
+*dryrun*
+OLD_*
+.DS_Store
+Thumbs.db

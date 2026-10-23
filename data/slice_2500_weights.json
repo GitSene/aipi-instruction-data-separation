@@ -1,0 +1,165 @@
+{
+  "retrieved_total": 362360,
+  "weights": {
+    "level1a": {
+      "retrieved_count": 16260,
+      "weight": 0.04487250248371785
+    },
+    "level1c": {
+      "retrieved_count": 9576,
+      "weight": 0.026426757920300255
+    },
+    "level1b": {
+      "retrieved_count": 27230,
+      "weight": 0.07514626338447952
+    },
+    "level1e": {
+      "retrieved_count": 13340,
+      "weight": 0.03681421790484601
+    },
+    "level1d": {
+      "retrieved_count": 14834,
+      "weight": 0.04093718953526879
+    },
+    "level2a": {
+      "retrieved_count": 2175,
+      "weight": 0.006002318136659675
+    },
+    "level1g": {
+      "retrieved_count": 23379,
+      "weight": 0.06451871067446738
+    },
+    "level3a": {
+      "retrieved_count": 4245,
+      "weight": 0.01171486919085992
+    },
+    "level2e": {
+      "retrieved_count": 13169,
+      "weight": 0.03634231151341208
+    },
+    "level4a": {
+      "retrieved_count": 5451,
+      "weight": 0.015043051109393973
+    },
+    "level2g": {
+      "retrieved_count": 5690,
+      "weight": 0.015702616182801634
+    },
+    "level2c": {
+      "retrieved_count": 3812,
+      "weight": 0.01051992493652721
+    },
+    "level1h": {
+      "retrieved_count": 9225,
+      "weight": 0.025458107958935865
+    },
+    "level3e": {
+      "retrieved_count": 12446,
+      "weight": 0.03434705817419141
+    },
+    "level4e": {
+      "retrieved_count": 48086,
+      "weight": 0.13270228502042167
+    },
+    "level3g": {
+      "retrieved_count": 13763,
+      "weight": 0.03798156529418258
+    },
+    "level3h": {
+      "retrieved_count": 2128,
+      "weight": 0.005872612871177834
+    },
+    "level1j": {
+      "retrieved_count": 10575,
+      "weight": 0.029183684733414286
+    },
+    "level3f": {
+      "retrieved_count": 2655,
+      "weight": 0.007326967656474224
+    },
+    "level2i": {
+      "retrieved_count": 454,
+      "weight": 0.0012528976708245942
+    },
+    "level1f": {
+      "retrieved_count": 6500,
+      "weight": 0.017937962247488684
+    },
+    "level1i": {
+      "retrieved_count": 28919,
+      "weight": 0.07980737388232696
+    },
+    "level2d": {
+      "retrieved_count": 6216,
+      "weight": 0.01715421128159841
+    },
+    "level4h": {
+      "retrieved_count": 12766,
+      "weight": 0.03523015785406778
+    },
+    "level4f": {
+      "retrieved_count": 3771,
+      "weight": 0.01040677779004305
+    },
+    "level3j": {
+      "retrieved_count": 608,
+      "weight": 0.0016778893917650955
+    },
+    "level2f": {
+      "retrieved_count": 1908,
+      "weight": 0.005265481841262833
+    },
+    "level2h": {
+      "retrieved_count": 6578,
+      "weight": 0.01815321779445855
+    },
+    "level4g": {
+      "retrieved_count": 10605,
+      "weight": 0.029266475328402694
+    },
+    "level3b": {
+      "retrieved_count": 1786,
+      "weight": 0.004928800088309968
+    },
+    "level4c": {
+      "retrieved_count": 5327,
+      "weight": 0.01470084998344188
+    },
+    "level3c": {
+      "retrieved_count": 5110,
+      "weight": 0.01410199801302572
+    },
+    "level4j": {
+      "retrieved_count": 499,
+      "weight": 0.0013770835633072083
+    },
+    "level3d": {
+      "retrieved_count": 1536,
+      "weight": 0.004238878463406557
+    },
+    "level4b": {
+      "retrieved_count": 1938,
+      "weight": 0.005348272436251242
+    },
+    "level2b": {
+      "retrieved_count": 4285,
+      "weight": 0.011825256650844464
+    },
+    "level2j": {
+      "retrieved_count": 7307,
+      "weight": 0.020165029252676894
+    },
+    "level4i": {
+      "retrieved_count": 4691,
+      "weight": 0.012945689369687603
+    },
+    "level4d": {
+      "retrieved_count": 5410,
+      "weight": 0.014929903962909814
+    },
+    "level3i": {
+      "retrieved_count": 8107,
+      "weight": 0.02237277845236781
+    }
+  }
+}

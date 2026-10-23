@@ -1,0 +1,402 @@
+{
+  "level1a": {
+    "no_defense": {
+      "n": 112,
+      "ASR_A": 0.8482142857142857
+    },
+    "family_b": {
+      "n": 112,
+      "ASR_A": 0.8392857142857143
+    }
+  },
+  "level1b": {
+    "no_defense": {
+      "n": 188,
+      "ASR_A": 0.8882978723404256
+    },
+    "family_b": {
+      "n": 188,
+      "ASR_A": 0.851063829787234
+    }
+  },
+  "level1c": {
+    "no_defense": {
+      "n": 66,
+      "ASR_A": 0.9242424242424242
+    },
+    "family_b": {
+      "n": 66,
+      "ASR_A": 0.9090909090909091
+    }
+  },
+  "level1d": {
+    "family_b": {
+      "n": 102,
+      "ASR_A": 0.9509803921568627
+    },
+    "no_defense": {
+      "n": 102,
+      "ASR_A": 0.9705882352941176
+    }
+  },
+  "level1e": {
+    "no_defense": {
+      "n": 92,
+      "ASR_A": 0.9891304347826086
+    },
+    "family_b": {
+      "n": 92,
+      "ASR_A": 1.0
+    }
+  },
+  "level1f": {
+    "no_defense": {
+      "n": 45,
+      "ASR_A": 0.9333333333333333
+    },
+    "family_b": {
+      "n": 45,
+      "ASR_A": 0.9111111111111111
+    }
+  },
+  "level1g": {
+    "no_defense": {
+      "n": 161,
+      "ASR_A": 0.8633540372670807
+    },
+    "family_b": {
+      "n": 161,
+      "ASR_A": 0.8633540372670807
+    }
+  },
+  "level1h": {
+    "no_defense": {
+      "n": 64,
+      "ASR_A": 0.90625
+    },
+    "family_b": {
+      "n": 64,
+      "ASR_A": 0.90625
+    }
+  },
+  "level1i": {
+    "no_defense": {
+      "n": 200,
+      "ASR_A": 0.985
+    },
+    "family_b": {
+      "n": 200,
+      "ASR_A": 0.99
+    }
+  },
+  "level1j": {
+    "no_defense": {
+      "n": 73,
+      "ASR_A": 0.9863013698630136
+    },
+    "family_b": {
+      "n": 73,
+      "ASR_A": 0.9726027397260274
+    }
+  },
+  "level2a": {
+    "no_defense": {
+      "n": 15,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 15,
+      "ASR_A": 1.0
+    }
+  },
+  "level2b": {
+    "family_b": {
+      "n": 30,
+      "ASR_A": 0.9666666666666667
+    },
+    "no_defense": {
+      "n": 30,
+      "ASR_A": 0.9666666666666667
+    }
+  },
+  "level2c": {
+    "no_defense": {
+      "n": 26,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 26,
+      "ASR_A": 1.0
+    }
+  },
+  "level2d": {
+    "no_defense": {
+      "n": 43,
+      "ASR_A": 0.8372093023255814
+    },
+    "family_b": {
+      "n": 43,
+      "ASR_A": 0.8372093023255814
+    }
+  },
+  "level2e": {
+    "no_defense": {
+      "n": 91,
+      "ASR_A": 0.9560439560439561
+    },
+    "family_b": {
+      "n": 91,
+      "ASR_A": 0.9340659340659341
+    }
+  },
+  "level2f": {
+    "no_defense": {
+      "n": 13,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 13,
+      "ASR_A": 1.0
+    }
+  },
+  "level2g": {
+    "no_defense": {
+      "n": 39,
+      "ASR_A": 0.9487179487179487
+    },
+    "family_b": {
+      "n": 39,
+      "ASR_A": 0.8974358974358975
+    }
+  },
+  "level2h": {
+    "no_defense": {
+      "n": 45,
+      "ASR_A": 0.8888888888888888
+    },
+    "family_b": {
+      "n": 45,
+      "ASR_A": 0.8888888888888888
+    }
+  },
+  "level2i": {
+    "no_defense": {
+      "n": 3,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 3,
+      "ASR_A": 1.0
+    }
+  },
+  "level2j": {
+    "no_defense": {
+      "n": 51,
+      "ASR_A": 0.11764705882352941
+    },
+    "family_b": {
+      "n": 51,
+      "ASR_A": 0.11764705882352941
+    }
+  },
+  "level3a": {
+    "no_defense": {
+      "n": 29,
+      "ASR_A": 0.9310344827586207
+    },
+    "family_b": {
+      "n": 29,
+      "ASR_A": 0.9310344827586207
+    }
+  },
+  "level3b": {
+    "no_defense": {
+      "n": 12,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 12,
+      "ASR_A": 0.8333333333333334
+    }
+  },
+  "level3c": {
+    "family_b": {
+      "n": 35,
+      "ASR_A": 0.9714285714285714
+    },
+    "no_defense": {
+      "n": 35,
+      "ASR_A": 1.0
+    }
+  },
+  "level3d": {
+    "no_defense": {
+      "n": 11,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 11,
+      "ASR_A": 1.0
+    }
+  },
+  "level3e": {
+    "no_defense": {
+      "n": 86,
+      "ASR_A": 0.9883720930232558
+    },
+    "family_b": {
+      "n": 86,
+      "ASR_A": 1.0
+    }
+  },
+  "level3f": {
+    "no_defense": {
+      "n": 18,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 18,
+      "ASR_A": 1.0
+    }
+  },
+  "level3g": {
+    "no_defense": {
+      "n": 95,
+      "ASR_A": 0.9473684210526315
+    },
+    "family_b": {
+      "n": 95,
+      "ASR_A": 0.9894736842105263
+    }
+  },
+  "level3h": {
+    "no_defense": {
+      "n": 15,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 15,
+      "ASR_A": 1.0
+    }
+  },
+  "level3i": {
+    "no_defense": {
+      "n": 56,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 56,
+      "ASR_A": 1.0
+    }
+  },
+  "level3j": {
+    "no_defense": {
+      "n": 4,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 4,
+      "ASR_A": 1.0
+    }
+  },
+  "level4a": {
+    "no_defense": {
+      "n": 38,
+      "ASR_A": 0.9210526315789473
+    },
+    "family_b": {
+      "n": 38,
+      "ASR_A": 0.9473684210526315
+    }
+  },
+  "level4b": {
+    "no_defense": {
+      "n": 13,
+      "ASR_A": 0.9230769230769231
+    },
+    "family_b": {
+      "n": 13,
+      "ASR_A": 0.9230769230769231
+    }
+  },
+  "level4c": {
+    "family_b": {
+      "n": 37,
+      "ASR_A": 1.0
+    },
+    "no_defense": {
+      "n": 37,
+      "ASR_A": 1.0
+    }
+  },
+  "level4d": {
+    "no_defense": {
+      "n": 37,
+      "ASR_A": 0.5135135135135135
+    },
+    "family_b": {
+      "n": 37,
+      "ASR_A": 0.5135135135135135
+    }
+  },
+  "level4e": {
+    "no_defense": {
+      "n": 332,
+      "ASR_A": 0.9728915662650602
+    },
+    "family_b": {
+      "n": 332,
+      "ASR_A": 0.9728915662650602
+    }
+  },
+  "level4f": {
+    "no_defense": {
+      "n": 26,
+      "ASR_A": 0.9230769230769231
+    },
+    "family_b": {
+      "n": 26,
+      "ASR_A": 0.9230769230769231
+    }
+  },
+  "level4g": {
+    "no_defense": {
+      "n": 73,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 73,
+      "ASR_A": 1.0
+    }
+  },
+  "level4h": {
+    "no_defense": {
+      "n": 88,
+      "ASR_A": 0.75
+    },
+    "family_b": {
+      "n": 88,
+      "ASR_A": 0.7386363636363636
+    }
+  },
+  "level4i": {
+    "family_b": {
+      "n": 32,
+      "ASR_A": 1.0
+    },
+    "no_defense": {
+      "n": 32,
+      "ASR_A": 1.0
+    }
+  },
+  "level4j": {
+    "no_defense": {
+      "n": 4,
+      "ASR_A": 1.0
+    },
+    "family_b": {
+      "n": 4,
+      "ASR_A": 1.0
+    }
+  }
+}

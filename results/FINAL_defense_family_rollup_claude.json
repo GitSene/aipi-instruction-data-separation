@@ -1,0 +1,60 @@
+{
+  "by_defense_family": {
+    "PromptShield": {
+      "no_defense": 0.01598626950738326,
+      "family_b": 0.002285630827393323,
+      "delta": 0.013700638679989939,
+      "n": 437
+    },
+    "TaskTracker": {
+      "no_defense": 0.013914383131728192,
+      "family_b": 0.0,
+      "delta": 0.013914383131728192,
+      "n": 355
+    },
+    "Spotlight": {
+      "no_defense": 0.05833713578312403,
+      "family_b": 0.0,
+      "delta": 0.05833713578312403,
+      "n": 697
+    },
+    "LLM-judge": {
+      "no_defense": 0.05667708630792553,
+      "family_b": 0.0,
+      "delta": 0.05667708630792553,
+      "n": 580
+    },
+    "All-combined": {
+      "no_defense": 0.02568213829785926,
+      "family_b": 0.0,
+      "delta": 0.02568213829785926,
+      "n": 422
+    }
+  },
+  "by_scenario": {
+    "S1 two-email no-retrieval": {
+      "no_defense": 0.04257410063220033,
+      "family_b": 0.000906170156858287,
+      "delta": 0.04166793047534204,
+      "n": 1100
+    },
+    "S2 ten-email no-retrieval": {
+      "no_defense": 0.028123208423362623,
+      "family_b": 0.0,
+      "delta": 0.028123208423362623,
+      "n": 356
+    },
+    "S3 retrieval": {
+      "no_defense": 0.07988204519698433,
+      "family_b": 0.0,
+      "delta": 0.07988204519698433,
+      "n": 361
+    },
+    "S4 retrieval + exfil": {
+      "no_defense": 0.01599187616437904,
+      "family_b": 0.0,
+      "delta": 0.01599187616437904,
+      "n": 674
+    }
+  }
+}

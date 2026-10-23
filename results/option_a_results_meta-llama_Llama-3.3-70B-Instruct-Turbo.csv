@@ -1,0 +1,3 @@
+configuration,n,ASR_A,UTR,DLR,sent_count,content_count
+no_defense,2500,0.9164,0.9164,0.6664,2291,1666
+family_b,2500,0.9112,0.9112,0.6652,2278,1663
