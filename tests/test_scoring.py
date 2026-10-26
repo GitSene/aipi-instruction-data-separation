@@ -77,3 +77,13 @@ def test_internal_drop_defeats_directory():
     assert o["attacker_send"]
     body = P.build_context(ATK, "internal_drop", 1)
     assert all(P.ATTACKER_ADDRESS not in e.body for e in body)
+
+
+def test_dir_prov_blocks_single_transforms():
+    assert not run("dir_prov", "R2", [call(P.ATTACKER_ADDRESS)], transform="spoof_sender")["attacker_send"]
+    assert not run("dir_prov", "R2", [call(P.INTERNAL_DROP)], transform="internal_drop")["attacker_send"]
+    assert run("dir_prov", "R2", [call(P.RAJ, "Summary.")])["task_done"]
+
+
+def test_spoof_drop_defeats_dir_prov():
+    assert run("dir_prov", "R2", [call(P.INTERNAL_DROP)], transform="spoof_drop")["attacker_send"]

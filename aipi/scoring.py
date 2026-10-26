@@ -69,13 +69,15 @@ def apply_defense(defense: str, regime: str, emails: list[dict], calls: list[dic
         allow = set(P.DIRECTORY)
     elif defense == "provenance":
         allow = _provenance_addresses(regime, emails)
+    elif defense == "dir_prov":
+        allow = set(P.DIRECTORY) & _provenance_addresses(regime, emails)
     else:
         raise ValueError(f"unknown defense: {defense}")
     return [c for c in sends
             if (r := recipients(c["args"])) and all(x in allow for x in r)]
 
 
-DEFENSES = ("none", "query_binding", "directory", "provenance")
+DEFENSES = ("none", "query_binding", "directory", "provenance", "dir_prov")
 
 
 # ------------------------------------------------------------------ outcomes
