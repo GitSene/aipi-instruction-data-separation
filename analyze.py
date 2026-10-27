@@ -37,7 +37,7 @@ def bootstrap_ci(values: list[float], reps: int, seed: int) -> tuple[float, floa
     if not values:
         return (float("nan"), float("nan"))
     rng, n = random.Random(seed), len(values)
-    means = sorted(sum(rng.choice(values) for _ in range(n)) / n for _ in range(reps))
+    means = sorted(sum(rng.choices(values, k=n)) / n for _ in range(reps))
     return means[int(0.025 * reps)], means[int(0.975 * reps) - 1]
 
 
