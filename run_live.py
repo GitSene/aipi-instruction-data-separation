@@ -121,7 +121,7 @@ async def main_async(a) -> None:
                     err = f"{type(e).__name__}: {e}"
                     status = getattr(e, "status_code", None)
                     logging.warning("call failed (%s): %s", status, err[:300])
-                    if status in (400, 401, 403, 404, 422) or isinstance(e, TypeError):
+                    if status in (400, 401, 402, 403, 404, 422) or isinstance(e, TypeError):
                         logging.error("non-retryable %s: %s", status, err[:500])
                         break                     # request itself is wrong; do not retry
                     await asyncio.sleep(delay + random.random() * delay)
