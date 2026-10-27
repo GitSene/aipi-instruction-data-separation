@@ -153,7 +153,8 @@ def main() -> None:
     p.add_argument("--conditions", nargs="+", default=list(P.CONDITIONS), choices=P.CONDITIONS)
     p.add_argument("--transforms", nargs="+", default=["none"], choices=P.TRANSFORMS)
     p.add_argument("--samples", type=int, default=1)
-    p.add_argument("--temperature", type=float, default=0.0)
+    p.add_argument("--temperature", type=lambda v: None if v == "default" else float(v),
+                   default=0.0, help="number, or 'default' to omit (provider default sampling)")
     p.add_argument("--max-tokens", type=int, default=512)
     p.add_argument("--seed", type=int, default=20261026)
     p.add_argument("--concurrency", type=int, default=8)

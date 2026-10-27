@@ -33,8 +33,8 @@ class OpenAICompatible:
             model=model,
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
-            tools=[self.tool], tool_choice="auto",
-            temperature=temperature, max_tokens=max_tokens)
+            tools=[self.tool], tool_choice="auto", max_tokens=max_tokens,
+            **({} if temperature is None else {"temperature": temperature}))
         ch = resp.choices[0]
         calls = []
         for tc in ch.message.tool_calls or []:
@@ -65,7 +65,8 @@ class Anthropic:
             model=model, system=system,
             messages=[{"role": "user", "content": user}],
             tools=[self.tool], tool_choice={"type": "auto"},
-            max_tokens=max_tokens, extra_body={"temperature": temperature})
+            max_tokens=max_tokens,
+            **({} if temperature is None else {"extra_body": {"temperature": temperature}}))
         calls = [{"name": b.name, "args": dict(b.input)}
                  for b in resp.content if b.type == "tool_use"]
         text = "".join(b.text for b in resp.content if b.type == "text")
