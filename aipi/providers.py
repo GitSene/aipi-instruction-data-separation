@@ -59,11 +59,13 @@ class Anthropic:
                      "input_schema": P.TOOL_PARAMETERS}
 
     async def complete(self, model, system, user, temperature, max_tokens) -> dict:
+        # Some SDK releases no longer expose `temperature` as a keyword; send it
+        # in the request body so the API itself accepts or rejects it.
         resp = await self.client.messages.create(
             model=model, system=system,
             messages=[{"role": "user", "content": user}],
             tools=[self.tool], tool_choice={"type": "auto"},
-            temperature=temperature, max_tokens=max_tokens)
+            max_tokens=max_tokens, extra_body={"temperature": temperature})
         calls = [{"name": b.name, "args": dict(b.input)}
                  for b in resp.content if b.type == "tool_use"]
         text = "".join(b.text for b in resp.content if b.type == "text")
