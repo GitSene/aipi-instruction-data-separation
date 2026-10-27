@@ -119,6 +119,10 @@ async def main_async(a) -> None:
                     break
                 except Exception as e:            # noqa: BLE001 - logged, retried
                     err = f"{type(e).__name__}: {e}"
+                    status = getattr(e, "status_code", None)
+                    if status in (400, 401, 403, 404, 422):
+                        logging.error("non-retryable %s: %s", status, err[:500])
+                        break                     # request itself is wrong; do not retry
                     await asyncio.sleep(delay + random.random() * delay)
                     delay = min(delay * 2, 60)
             if err:
