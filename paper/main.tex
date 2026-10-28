@@ -274,7 +274,7 @@ Separation reduced ASR under adaptation as it did without it. In \rtwo{} with se
 Before this study, the same corpus had been run in a single-email configuration: the attack email alone, no sender header, no benign note, and the \ro{} request. GPT-4o-mini at temperature 0 produced 46.4\% ASR with no defense and 23.4\% with separation, and Llama~3.3~70B through Together AI's serverless API at temperature 0 produced 91.6\% and 91.1\%, an apparent null effect of separation. Rerunning the single-email configuration under the present harness (Table~\ref{tab:legacy}) reproduced the GPT-4o-mini values within two points, 48.1\% and 22.0\%. It did not reproduce the Llama values. Through DeepInfra, Llama~3.3~70B produced 62.0\% and 22.6\%, so separation reduced ASR by about two thirds rather than not at all.
 
 \begin{table}[t]
-\caption{Single-email configuration, \ro, ASR (\%). The earlier runs used the full 2,500-attack slice, temperature 0, one sample, and a slightly different tool schema; the present runs use the 1,000-attack subset, temperature 0.7, three samples, and the shared schema.}
+\caption{Single-email configuration, \ro, ASR (\%). The earlier runs used the full 2,500-attack slice, temperature 0, one sample, and a slightly different tool schema. The present runs use the 1,000-attack subset and the shared schema, with three samples at $T{=}0.7$ or one sample at $T{=}0$.}
 \label{tab:legacy}
 \begin{tabular}{llrr}
 \toprule
@@ -284,12 +284,13 @@ Model & Run & none & separation \\
  & present (OpenAI) & 48.1 & 22.0 \\
 \midrule
 \multirow{2}{*}{Llama 3.3 70B} & earlier (Together AI) & 91.6 & 91.1 \\
- & present (DeepInfra, FP8) & 62.0 & 22.6 \\
+ & present (DeepInfra, FP8, $T{=}0.7$) & 62.0 & 22.6 \\
+ & present (DeepInfra, FP8, $T{=}0$) & 65.0 & 24.0 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The GPT-4o-mini replication shows that the changes in temperature and tool schema move results by about two points on that model. The Llama runs differ by 30 points without the directive and 69 points with it, and they also differ in hosting provider, so the most plausible explanation is the serving configuration: quantization, chat template, or the provider's tool-call parser. The data cannot separate these causes. The practical conclusion does not depend on which one is responsible. A prompt-level control measured on one deployment of an open-weight model cannot be assumed to behave the same way on another deployment of the same weights. Moving from the single-email to the two-email context lowered Llama's \ro{} ASR from 62.0\% to 48.2\% with separation nearly unchanged (22.6\% and 20.2\%).
+Two further checks isolate the source of the Llama discrepancy. The GPT-4o-mini replication shows that the change in tool schema and decoding moves results by about two points on that model. A second Llama run through DeepInfra at temperature 0, one sample per attack, produced 65.0\% and 24.0\%, within three points of the temperature-0.7 run, so temperature does not account for the gap either. What remains is the hosting provider. The Together AI and DeepInfra runs of the same model differ by 27 points without the directive and 67 points with it. The cause within the serving stack (quantization, chat template, or the provider's tool-call parser) cannot be identified from these data, and the earlier Together AI deployment can no longer be queried. The practical conclusion does not depend on which one is responsible. A prompt-level control measured on one deployment of an open-weight model cannot be assumed to behave the same way on another deployment of the same weights. Moving from the single-email to the two-email context lowered Llama's \ro{} ASR from 62.0\% to 48.2\% with separation nearly unchanged (22.6\% and 20.2\%).
 
 %% =====================================================================
 \section{Implications for deployment}
