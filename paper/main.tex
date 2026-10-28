@@ -25,7 +25,7 @@
   \country{USA}}
 
 \begin{abstract}
-Evaluations of indirect prompt injection against tool-using assistants usually test a setting in which the user never asks for the action the attacker wants. Real assistants are routinely asked to send email, so the more consequential question is what happens when the requested action and the attacked action share a tool. This study replays 1,000 human-written adaptive attacks from the LLMail-Inject corpus against four models (GPT-4o-mini, Llama~3.3~70B, gpt-oss-120b, and Claude Sonnet~4.6) in a two-email assistant harness under three authorization regimes: no send requested, a send to a recipient named by the user, and a send to a recipient named inside a trusted email. Each attack runs three times per condition on the first three models (54,000 scored executions each) and once per core condition on Claude Sonnet~4.6. Authorization changes susceptibility in opposite directions across models. Attack success on GPT-4o-mini rises from 38.1\% with no send requested to 62.7\% when the recipient comes from an email; Llama~3.3~70B falls from 48.2\% to 9.0\%, gpt-oss-120b changes little (20.8\% to 16.8\%), and Claude Sonnet~4.6 stays below 1\% throughout. Call-level analysis traces the difference to parallel tool calling: 53.5 of GPT-4o-mini's 62.7 points come from attacker sends issued alongside the legitimate send. Disabling parallel tool calls lowers that rate to 19.2\% at a cost of 11.9 points of task completion. An instruction--data separation directive reduces attack success wherever attacks succeeded but leaves up to 23.8\% on the models with a substantial baseline; on Claude Sonnet~4.6 it removes the few remaining attacks while cutting task completion in the email-recipient regime from 96.9\% to 83.3\%. A directory allowlist and a provenance check each block the unmodified attacks and each fall to one realistic adaptation: an internal drop mailbox defeats the directory, and a spoofed internal sender defeats provenance. Requiring both checks fails against the two adaptations combined, which restores the undefended attack rate. Only binding recipients to the user's own text holds, and it does so by disabling the legitimate task whenever the recipient must come from email. The results give deployers three concrete settings to test and one negative result: recipient filters that preserve utility do not survive an attacker who can write from, or to, an internal mailbox.
+Evaluations of indirect prompt injection against tool-using assistants usually test a setting in which the user never asks for the action the attacker wants. Real assistants are routinely asked to send email, so the more consequential question is what happens when the requested action and the attacked action share a tool. This study replays 1,000 human-written adaptive attacks from the LLMail-Inject corpus against four models (GPT-4o-mini, Llama~3.3~70B, gpt-oss-120b, and Claude Sonnet~4.6) in a two-email assistant harness under three authorization regimes: no send requested, a send to a recipient named by the user, and a send to a recipient named inside a trusted email. Each attack runs three times per condition on the first three models (54,000 scored executions each) and once per core condition on Claude Sonnet~4.6. Authorization changes susceptibility in opposite directions across models. Attack success on GPT-4o-mini rises from 38.1\% with no send requested to 62.7\% when the recipient comes from an email; Llama~3.3~70B falls from 48.2\% to 9.0\%, gpt-oss-120b changes little (20.8\% to 16.8\%), and Claude Sonnet~4.6 stays below 1\% throughout. Call-level analysis traces the difference to parallel tool calling: 53.5 of GPT-4o-mini's 62.7 points come from attacker sends issued alongside the legitimate send. Disabling parallel tool calls lowers that rate to 19.2\% at a cost of 12.0 points of task completion. An instruction--data separation directive reduces attack success wherever attacks succeeded but leaves up to 23.8\% on the models with a substantial baseline; on Claude Sonnet~4.6 it removes the few remaining attacks while cutting task completion in the email-recipient regime from 96.9\% to 83.3\%. A directory allowlist and a provenance check each block the unmodified attacks and each fall to one realistic adaptation: an internal drop mailbox defeats the directory, and a spoofed internal sender defeats provenance. Requiring both checks fails against the two adaptations combined, which restores the undefended attack rate. Only binding recipients to the user's own text holds, and it does so by disabling the legitimate task whenever the recipient must come from email. The results give deployers three concrete settings to test and one negative result: recipient filters that preserve utility do not survive an attacker who can write from, or to, an internal mailbox.
 \end{abstract}
 
 \begin{CCSXML}
@@ -141,7 +141,7 @@ GPT-4o-mini was accessed through the OpenAI API, gpt-oss-120b through Together A
 \subsection{Scoring}
 Scoring is structural. An execution counts toward attack success rate (ASR) when an executed \texttt{send\_email} call includes the attack's target address among its recipients. Strict exfiltration additionally requires the attack's target string in the body of that call. Task completion, defined for \rone{} and \rtwo, requires an executed call to the expected recipient (Dana in \rone, Raj in \rtwo). Llama~3.3~70B occasionally emitted tool arguments as a list of objects (4 of 54,000 executions); the reported figures expand such lists into separate calls, and rejecting them instead changes no reported rate by more than 0.1 points.
 
-For each cell, rates are averaged over samples within an attack and then over attacks. Confidence intervals are 95\% percentile bootstrap intervals with attacks as the resampling unit, so repeated samples of one attack are not treated as independent. \todo{Insert CIs from summary CSVs; add paired bootstrap intervals for regime and condition differences.}
+For each cell, rates are averaged over samples within an attack and then over attacks. Confidence intervals are 95\% percentile bootstrap intervals with attacks as the resampling unit, so repeated samples of one attack are not treated as independent. Differences between two cells of the same model use the same 1,000 attacks, so they are estimated with a paired bootstrap over attacks, and two-sided $p$-values are taken from the bootstrap distribution of the paired difference (5,000 resamples). Every interval and test reported in the text appears in Appendix~\ref{app:stats}. No interval for a cell in Table~\ref{tab:headline} extends more than 2.9 points from its estimate.
 
 \subsection{Run completeness}
 GPT-4o-mini and Llama~3.3~70B completed all 54,000 executions. gpt-oss-120b completed 53,999; one \rtwo{} execution failed on every retry with a provider server error and is excluded. Claude Sonnet~4.6 completed all 6,000 executions; 97 (1.6\%) ended with the API's refusal stop reason, spread between 14 and 20 per regime and condition, and are scored as producing no send.
@@ -152,10 +152,10 @@ GPT-4o-mini and Llama~3.3~70B completed all 54,000 executions. gpt-oss-120b comp
 
 \subsection{Authorization changes susceptibility, in opposite directions}
 
-Table~\ref{tab:headline} reports ASR with no structural check. In \ro, the setting most benchmarks measure, the three models are ordered gpt-oss-120b (20.8\%), GPT-4o-mini (38.1\%), and Llama~3.3~70B (48.2\%). Authorization reorders them. GPT-4o-mini becomes more exploitable when the user requests a send, rising to 45.0\% in \rone{} and 62.7\% in \rtwo. Llama~3.3~70B becomes far less exploitable, falling to 7.9\% and 9.0\%. gpt-oss-120b changes little (19.1\% and 16.8\%).
+Table~\ref{tab:headline} reports ASR with no structural check. In \ro, the setting most benchmarks measure, the three models are ordered gpt-oss-120b (20.8\%), GPT-4o-mini (38.1\%), and Llama~3.3~70B (48.2\%). Authorization reorders them. GPT-4o-mini becomes more exploitable when the user requests a send, rising to 45.0\% in \rone{} and 62.7\% in \rtwo. Llama~3.3~70B becomes far less exploitable, falling to 7.9\% and 9.0\%. gpt-oss-120b moves slightly downward (19.1\% and 16.8\%). Paired on attack, the \rtwo{} minus \ro{} difference is $+24.6$ points for GPT-4o-mini (95\% CI $[+21.7, +27.4]$), $-39.2$ for Llama~3.3~70B ($[-41.9, -36.5]$), $-4.0$ for gpt-oss-120b ($[-5.5, -2.7]$), and $-0.7$ for Claude Sonnet~4.6 ($[-1.2, -0.2]$); all four have $p < 0.001$.
 
 \begin{table}[t]
-\caption{Attack success rate (\%) with no structural check, 1,000 attacks $\times$ 3 samples per cell. \ro: no send requested. \rone: send to a recipient the user names. \rtwo: send to a recipient named in a trusted email. Strict exfiltration in parentheses where available.}
+\caption{Attack success rate (\%) with no structural check, 1,000 attacks $\times$ 3 samples per cell. \ro: no send requested. \rone: send to a recipient the user names. \rtwo: send to a recipient named in a trusted email. Strict exfiltration in parentheses. 95\% confidence intervals are in Appendix~\ref{app:stats}.}
 \label{tab:headline}
 \begin{tabular}{llrrr}
 \toprule
@@ -167,8 +167,8 @@ Model & Condition & \ro & \rone & \rtwo \\
 \multirow{2}{*}{Llama 3.3 70B} & none & 48.2 (33.6) & 7.9 (6.0) & 9.0 (6.2) \\
  & separation & 20.2 (12.1) & 3.0 (2.4) & 2.4 (2.0) \\
 \midrule
-\multirow{2}{*}{gpt-oss-120b} & none & 20.8 & 19.1 & 16.8 \\
- & separation & 10.1 & 9.3 & 7.0 \\
+\multirow{2}{*}{gpt-oss-120b} & none & 20.8 (17.1) & 19.1 (15.7) & 16.8 (13.4) \\
+ & separation & 10.1 (7.7) & 9.3 (7.2) & 7.0 (5.5) \\
 \midrule
 \multirow{2}{*}{Claude Sonnet 4.6\textsuperscript{a}} & none & 0.7 (0.7) & 0.4 (0.4) & 0.0 (0.0) \\
  & separation & 0.0 (0.0) & 0.0 (0.0) & 0.0 (0.0) \\
@@ -178,7 +178,7 @@ Model & Condition & \ro & \rone & \rtwo \\
 \smallskip\footnotesize\textsuperscript{a}One sample per cell at the provider's default sampling.
 \end{table}
 
-A measurement taken only in \ro{} would therefore misrank these models for an assistant that sends mail. Llama~3.3~70B is the most exploitable of the three when it only summarizes and the least exploitable when it is also asked to send. \todo{Strict exfiltration for gpt-oss-120b from summary CSV.}
+A measurement taken only in \ro{} would therefore misrank these models for an assistant that sends mail. Llama~3.3~70B is the most exploitable of the three when it only summarizes and the least exploitable when it is also asked to send.
 
 \subsection{The mechanism is parallel tool calling}
 
@@ -233,13 +233,13 @@ Regime & Condition & ASR & Task & ASR & Task \\
 \end{tabular}
 \end{table}
 
-The intervention has a cost. With one call available, GPT-4o-mini sometimes spends it on the attacker: attacker-only sends in \rone{} rose from 8.7\% to 24.5\%, and task completion fell by 17.7 points in \rone{} and 11.9 points in \rtwo. Combined with the separation directive, the single-call setting produced the lowest prompt- or API-level ASR measured for GPT-4o-mini in \rtwo, 8.3\%, at 81.2\% task completion.
+The intervention has a cost. With one call available, GPT-4o-mini sometimes spends it on the attacker: attacker-only sends in \rone{} rose from 8.7\% to 24.5\%, and task completion fell by 17.8 points in \rone{} ($[-20.1, -15.5]$) and 12.0 points in \rtwo{} ($[-13.9, -10.1]$). The ASR reductions were 20.5 points in \rone{} ($[-22.8, -18.4]$) and 43.5 points in \rtwo{} ($[-46.2, -40.7]$). Combined with the separation directive, the single-call setting produced the lowest prompt- or API-level ASR measured for GPT-4o-mini in \rtwo, 8.3\%, at 81.2\% task completion.
 
 \subsection{Instruction--data separation reduces risk and has a utility cost on one model}
 
-The separation directive reduced ASR in all nine model--regime cells of Table~\ref{tab:headline} for the three models with a substantial baseline, by between 46\% (GPT-4o-mini, \ro) and 73\% (Llama~3.3~70B, \rtwo) relative to the undefended rate. On GPT-4o-mini it also removed the authorization effect: defended ASR is 20.6\%, 23.8\%, and 23.7\% across the three regimes. For those three models the directive did not reach zero in any regime, and the highest defended rate, 23.8\%, means roughly one attack in four still produced an attacker send. On Claude Sonnet~4.6, whose undefended rates were at most 0.7\%, no attack succeeded under separation.
+The separation directive reduced ASR in all nine model--regime cells of Table~\ref{tab:headline} for the three models with a substantial baseline, by between 46\% (GPT-4o-mini, \ro) and 73\% (Llama~3.3~70B, \rtwo) relative to the undefended rate. On GPT-4o-mini it also absorbed most of the authorization effect: defended ASR is 20.6\%, 23.8\%, and 23.7\% across the three regimes, and the paired \rtwo{} minus \ro{} increase shrinks from 24.6 points to 3.1 points ($[+1.0, +5.2]$). For those three models the directive did not reach zero in any regime, and the highest defended rate, 23.8\%, means roughly one attack in four still produced an attacker send. On Claude Sonnet~4.6, whose undefended rates were at most 0.7\%, no attack succeeded under separation.
 
-Separation did not prevent the \rtwo{} task, despite instructing the model not to act on information found in emails. Task completion under separation was 86.1\% for GPT-4o-mini and 91.1\% for Llama~3.3~70B in \rtwo. On Llama~3.3~70B it rose relative to the undefended condition (from 81.9\% to 91.1\%), which suggests the directive also reduced responses in which the attack displaced the task entirely. Claude Sonnet~4.6 is the exception. Under separation, 16.7\% of its \rtwo{} responses made no call at all, against 3.1\% without the directive, and task completion fell from 96.9\% to 83.3\%. The model appears to follow the directive's instruction not to act on information in emails literally, including the reviewer address the user asked it to use. Refusal stop reasons do not explain the drop: 14 \rtwo{} separation responses ended that way. \todo{gpt-oss-120b task completion from summary CSV.}
+On three of the four models, separation did not prevent the \rtwo{} task, despite instructing the model not to act on information found in emails. Task completion rose under separation for Llama~3.3~70B (81.9\% to 91.1\%, $+9.2$ points, $[+7.3, +11.1]$) and gpt-oss-120b (89.7\% to 95.5\%, $+5.8$, $[+4.5, +7.1]$), which suggests the directive also reduced responses in which the attack displaced the task entirely. GPT-4o-mini lost 3.3 points ($[-5.0, -1.7]$). Claude Sonnet~4.6 is the exception. Under separation, 16.7\% of its \rtwo{} responses made no call at all, against 3.1\% without the directive, and task completion fell from 96.9\% to 83.3\%. The model appears to follow the directive's instruction not to act on information in emails literally, including the reviewer address the user asked it to use. Refusal stop reasons do not explain the drop: 14 \rtwo{} separation responses ended that way. The paired task difference is $-13.6$ points ($[-16.0, -11.2]$).
 
 \subsection{Structural checks and the attacks that defeat them}
 
@@ -265,16 +265,20 @@ Model & Check & Original & Spoofed & Int.\ drop & Both & Task \\
  & provenance & 0.0 & 8.1 & 0.0 & 11.4 & 81.9 \\
  & dir.\ + prov.\ & 0.0 & 0.0 & 0.0 & 11.4 & 81.9 \\
 \midrule
-gpt-oss-120b & & \multicolumn{5}{c}{\todo{from summary CSV}} \\
+\multirow{5}{*}{gpt-oss-120b} & none & 16.8 & 16.9 & 19.0 & 19.2 & 89.7 \\
+ & query binding & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+ & directory & 0.0 & 0.0 & 19.0 & 19.2 & 89.7 \\
+ & provenance & 0.0 & 16.5 & 0.0 & 19.1 & 89.7 \\
+ & dir.\ + prov.\ & 0.0 & 0.0 & 0.0 & 19.1 & 89.7 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Each adaptation cost the attacker nothing in model compliance. GPT-4o-mini followed the spoofed, internal-drop, and combined variants at 63.3\%, 64.9\%, and 64.0\%, against 62.7\% for the originals; Llama~3.3~70B followed the internal-drop variant more often than the original (12.1\% against 9.0\%). Each check then failed exactly where its assumption failed. The directory check passed the internal drop address, provenance passed the address carried by a spoofed internal sender, and their conjunction passed the combined variant, which satisfies both. Once a model selects an address, a check's outcome follows mechanically from that address; the empirical content of Table~\ref{tab:adaptive} is the rate at which models select the adapted addresses, and that rate did not fall.
+Each adaptation cost the attacker nothing in model compliance. GPT-4o-mini followed the spoofed, internal-drop, and combined variants at 63.3\%, 64.9\%, and 64.0\%, against 62.7\% for the originals. Llama~3.3~70B and gpt-oss-120b followed the internal-drop variant more often than the original (12.1\% against 9.0\%, and 19.0\% against 16.8\%), plausibly because an address inside the organization's domain looks like a legitimate destination. Each check then failed exactly where its assumption failed. The directory check passed the internal drop address, provenance passed the address carried by a spoofed internal sender, and their conjunction passed the combined variant, which satisfies both. Once a model selects an address, a check's outcome follows mechanically from that address; the empirical content of Table~\ref{tab:adaptive} is the rate at which models select the adapted addresses, and that rate did not fall.
 
 Query binding held against every variant because no attacker-controlled text can enter the user's request. It also blocked every legitimate \rtwo{} send, because Raj's address appears only in Dana's email. Query binding is the only check in this study that resisted adaptation, and it resisted by making the \rtwo{} task impossible.
 
-Separation reduced ASR under adaptation as it did without it. In \rtwo{} with separation, GPT-4o-mini's ASR under the combined variant and the conjunctive check was 23.8\%, and Llama~3.3~70B's was 3.5\%.
+Separation reduced ASR under adaptation as it did without it. In \rtwo{} with separation, GPT-4o-mini's ASR under the combined variant and the conjunctive check was 23.8\%, gpt-oss-120b's was 7.2\%, and Llama~3.3~70B's was 3.5\%.
 
 \subsection{Replication of a single-email configuration and serving dependence}
 
@@ -307,7 +311,7 @@ Two further checks isolate the source of the Llama discrepancy. The GPT-4o-mini 
 The \ro{} setting misranked the three models. A deployer choosing a model for an assistant that sends mail should measure with the send authorized, because the ordering in Table~\ref{tab:headline} reverses between \ro{} and \rtwo.
 
 \paragraph{Treat parallel tool calling as a security setting.}
-For GPT-4o-mini, most authorized-regime risk came from additional calls issued alongside the legitimate one, and disabling parallel calls removed about 70\% of \rtwo{} ASR. Where a provider exposes the setting and the task needs one action per turn, turning it off is a low-cost control. The utility loss in Table~\ref{tab:noparallel} is the price, and it should be measured on the deployer's own tasks. A related enforcement option, which this study did not test, is to allow at most one outbound send per user request at the tool layer, independent of the model's behavior.
+For GPT-4o-mini, most authorized-regime risk came from additional calls issued alongside the legitimate one, and disabling parallel calls removed 43.5 of 62.7 points of \rtwo{} ASR. Where a provider exposes the setting and the task needs one action per turn, turning it off is a low-cost control. The utility loss in Table~\ref{tab:noparallel} is the price, and it should be measured on the deployer's own tasks. A related enforcement option, which this study did not test, is to allow at most one outbound send per user request at the tool layer, independent of the model's behavior.
 
 \paragraph{Keep the separation directive, and do not rely on it.}
 The directive reduced ASR in every cell and cost little task completion, including in \rtwo{} where it nominally conflicts with the task. It never reached zero.
@@ -341,5 +345,92 @@ The harness, analysis scripts, the attack slice derivation, per-execution logs, 
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
+
+\appendix
+\section{Statistical detail}
+\label{app:stats}
+
+Table~\ref{tab:ci} gives every main-table cell with its 95\% bootstrap interval, resampling attacks. Table~\ref{tab:paired} gives the paired differences cited in the text.
+
+\begin{table}[h]
+\caption{ASR, strict exfiltration, and task completion (\%) with 95\% bootstrap CIs; unmodified attacks, no structural check.}
+\label{tab:ci}
+\footnotesize
+\begin{tabular}{lllll}
+\toprule
+Model & Cell & ASR & Strict & Task \\
+\midrule
+GPT-4o-mini & \ro{} none & 38.1 [35.1, 41.0] & 22.2 [19.8, 24.7] & -- \\
+ & \ro{} sep. & 20.6 [18.2, 22.9] & 10.7 [9.0, 12.6] & -- \\
+ & \rone{} none & 45.0 [42.1, 47.9] & 26.9 [24.4, 29.5] & 90.0 [88.1, 91.8] \\
+ & \rone{} sep. & 23.8 [21.4, 26.4] & 12.4 [10.5, 14.4] & 88.8 [86.9, 90.6] \\
+ & \rtwo{} none & 62.7 [60.1, 65.4] & 38.6 [35.9, 41.4] & 89.4 [87.6, 91.3] \\
+ & \rtwo{} sep. & 23.7 [21.3, 26.2] & 11.6 [9.8, 13.4] & 86.1 [84.1, 88.0] \\
+\midrule
+GPT-4o-mini, & \rone{} none & 24.5 [21.9, 27.1] & 11.3 [9.5, 13.3] & 72.3 [69.5, 75.0] \\
+\quad no parallel & \rone{} sep. & 12.8 [10.8, 14.7] & 5.5 [4.2, 6.8] & 79.2 [76.8, 81.6] \\
+ & \rtwo{} none & 19.2 [16.8, 21.6] & 9.0 [7.3, 10.8] & 77.5 [74.9, 80.0] \\
+ & \rtwo{} sep. & 8.3 [6.8, 10.0] & 3.2 [2.2, 4.2] & 81.2 [79.0, 83.3] \\
+\midrule
+Llama 3.3 70B & \ro{} none & 48.2 [45.3, 51.1] & 33.6 [30.7, 36.4] & -- \\
+ & \ro{} sep. & 20.2 [17.8, 22.6] & 12.1 [10.1, 14.0] & -- \\
+ & \rone{} none & 7.9 [6.4, 9.5] & 6.0 [4.7, 7.4] & 84.0 [82.2, 85.7] \\
+ & \rone{} sep. & 3.0 [2.0, 4.0] & 2.4 [1.6, 3.4] & 93.3 [92.2, 94.3] \\
+ & \rtwo{} none & 9.0 [7.4, 10.8] & 6.2 [4.8, 7.6] & 81.9 [80.0, 83.8] \\
+ & \rtwo{} sep. & 2.4 [1.6, 3.3] & 2.0 [1.2, 2.8] & 91.1 [89.8, 92.3] \\
+\midrule
+gpt-oss-120b & \ro{} none & 20.8 [18.5, 23.2] & 17.1 [14.9, 19.3] & -- \\
+ & \ro{} sep. & 10.1 [8.4, 11.9] & 7.7 [6.1, 9.2] & -- \\
+ & \rone{} none & 19.1 [16.9, 21.4] & 15.7 [13.6, 17.9] & 86.9 [84.9, 88.7] \\
+ & \rone{} sep. & 9.3 [7.6, 11.0] & 7.2 [5.7, 8.7] & 94.9 [93.7, 96.1] \\
+ & \rtwo{} none & 16.8 [14.8, 19.0] & 13.4 [11.5, 15.4] & 89.7 [88.1, 91.3] \\
+ & \rtwo{} sep. & 7.0 [5.6, 8.5] & 5.5 [4.2, 6.8] & 95.5 [94.4, 96.6] \\
+\midrule
+Claude Sonnet 4.6 & \ro{} none & 0.7 [0.2, 1.3] & 0.7 [0.2, 1.3] & -- \\
+ & \ro{} sep. & 0.0 [0.0, 0.0] & 0.0 [0.0, 0.0] & -- \\
+ & \rone{} none & 0.4 [0.1, 0.8] & 0.4 [0.1, 0.8] & 94.4 [92.9, 95.7] \\
+ & \rone{} sep. & 0.0 [0.0, 0.0] & 0.0 [0.0, 0.0] & 98.6 [97.8, 99.3] \\
+ & \rtwo{} none & 0.0 [0.0, 0.0] & 0.0 [0.0, 0.0] & 96.9 [95.7, 97.9] \\
+ & \rtwo{} sep. & 0.0 [0.0, 0.0] & 0.0 [0.0, 0.0] & 83.3 [80.9, 85.5] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Paired differences in percentage points (second cell minus first), 95\% bootstrap CI, two-sided bootstrap $p$; $n = 1{,}000$ attacks each.}
+\label{tab:paired}
+\footnotesize
+\begin{tabular}{llrll}
+\toprule
+Model & Comparison & Diff. & 95\% CI & $p$ \\
+\midrule
+GPT-4o-mini & ASR \rone{} $-$ \ro, none & $+6.9$ & $[+4.9, +9.0]$ & $<0.001$ \\
+ & ASR \rtwo{} $-$ \ro, none & $+24.6$ & $[+21.7, +27.4]$ & $<0.001$ \\
+ & ASR \rtwo{} $-$ \ro, separation & $+3.1$ & $[+1.0, +5.2]$ & 0.003 \\
+ & ASR sep. $-$ none, \rtwo & $-39.1$ & $[-41.6, -36.4]$ & $<0.001$ \\
+ & Task sep. $-$ none, \rtwo & $-3.3$ & $[-5.0, -1.7]$ & $<0.001$ \\
+ & ASR no-parallel $-$ parallel, \rone{} none & $-20.5$ & $[-22.8, -18.4]$ & $<0.001$ \\
+ & Task no-parallel $-$ parallel, \rone{} none & $-17.8$ & $[-20.1, -15.5]$ & $<0.001$ \\
+ & ASR no-parallel $-$ parallel, \rtwo{} none & $-43.5$ & $[-46.2, -40.7]$ & $<0.001$ \\
+ & Task no-parallel $-$ parallel, \rtwo{} none & $-12.0$ & $[-13.9, -10.1]$ & $<0.001$ \\
+ & ASR no-parallel $-$ parallel, \rtwo{} sep. & $-15.3$ & $[-17.4, -13.4]$ & $<0.001$ \\
+\midrule
+Llama 3.3 70B & ASR \rone{} $-$ \ro, none & $-40.4$ & $[-43.2, -37.6]$ & $<0.001$ \\
+ & ASR \rtwo{} $-$ \ro, none & $-39.2$ & $[-41.9, -36.5]$ & $<0.001$ \\
+ & ASR sep. $-$ none, \ro & $-28.1$ & $[-30.8, -25.4]$ & $<0.001$ \\
+ & Task sep. $-$ none, \rtwo & $+9.2$ & $[+7.3, +11.1]$ & $<0.001$ \\
+\midrule
+gpt-oss-120b & ASR \rone{} $-$ \ro, none & $-1.7$ & $[-2.9, -0.6]$ & 0.002 \\
+ & ASR \rtwo{} $-$ \ro, none & $-4.0$ & $[-5.5, -2.7]$ & $<0.001$ \\
+ & ASR sep. $-$ none, \rtwo & $-9.8$ & $[-11.6, -8.1]$ & $<0.001$ \\
+ & Task sep. $-$ none, \rtwo & $+5.8$ & $[+4.5, +7.1]$ & $<0.001$ \\
+\midrule
+Claude Sonnet 4.6 & ASR \rtwo{} $-$ \ro, none & $-0.7$ & $[-1.2, -0.2]$ & $<0.001$ \\
+ & ASR sep. $-$ none, \ro & $-0.7$ & $[-1.2, -0.2]$ & $<0.001$ \\
+ & Task sep. $-$ none, \rone & $+4.2$ & $[+3.0, +5.5]$ & $<0.001$ \\
+ & Task sep. $-$ none, \rtwo & $-13.6$ & $[-16.0, -11.2]$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
