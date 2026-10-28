@@ -10,3 +10,9 @@ smoke_*.jsonl
 OLD_*
 .DS_Store
 Thumbs.db
+
+# paper drafts are kept in Overleaf, not in the artifact
+paper/
+localcheck*
+# raw per-call logs are archived on Zenodo (too large for GitHub)
+results_*/*.jsonl
