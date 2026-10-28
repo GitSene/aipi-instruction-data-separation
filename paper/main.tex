@@ -1,0 +1,337 @@
+\documentclass[acmsmall,review,screen]{acmart}
+
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\ro}{R0}
+\newcommand{\rone}{R1}
+\newcommand{\rtwo}{R2}
+
+\setcopyright{none}
+\acmJournal{DTRAP}
+\citestyle{acmauthoryear}
+
+\begin{document}
+
+\title{When the User Says ``Send'': Authorization, Parallel Tool Calls, and the Limits of Prompt-Level and Structural Defenses Against Indirect Prompt Injection}
+
+\author{Babek Habibi Norouzlou}
+\email{bnorouzlou19519@ucumberlands.edu}
+\affiliation{%
+  \institution{School of Computer and Information Sciences, University of the Cumberlands}
+  \city{Williamsburg}
+  \state{Kentucky}
+  \country{USA}}
+
+\begin{abstract}
+Evaluations of indirect prompt injection against tool-using assistants usually test a setting in which the user never asks for the action the attacker wants. Real assistants are routinely asked to send email, so the more consequential question is what happens when the requested action and the attacked action share a tool. This study replays 1,000 human-written adaptive attacks from the LLMail-Inject corpus against three models (GPT-4o-mini, Llama~3.3~70B, and gpt-oss-120b) in a two-email assistant harness under three authorization regimes: no send requested, a send to a recipient named by the user, and a send to a recipient named inside a trusted email. Each attack runs three times per condition, for 54,000 scored executions per model. Authorization changes susceptibility in opposite directions across models. Attack success on GPT-4o-mini rises from 38.1\% with no send requested to 62.7\% when the recipient comes from an email, while Llama~3.3~70B falls from 48.2\% to 9.0\%. Call-level analysis traces the difference to parallel tool calling: 53.5 of GPT-4o-mini's 62.7 points come from attacker sends issued alongside the legitimate send. Disabling parallel tool calls lowers that rate to 19.2\% at a cost of 11.9 points of task completion. An instruction--data separation directive reduces attack success on every model and in every regime, to between 2.4\% and 23.8\%, but never to zero. Three structural recipient checks (a directory allowlist, provenance binding, and their conjunction) each block the unmodified attacks and each fall to a single realistic adaptation; a combined spoofed-sender, internal-drop attack restores the undefended rate against all three. Only binding recipients to the user's own text holds, and it does so by disabling the legitimate task whenever the recipient must come from email. The results give deployers three concrete settings to test and one negative result: recipient filters that preserve utility do not survive an attacker who can write from, or to, an internal mailbox. \todo{Add Claude Sonnet 4.6 once its run completes.}
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+<concept><concept_id>10002978.10003022</concept_id><concept_desc>Security and privacy~Software and application security</concept_desc><concept_significance>500</concept_significance></concept>
+<concept><concept_id>10010147.10010178</concept_id><concept_desc>Computing methodologies~Artificial intelligence</concept_desc><concept_significance>300</concept_significance></concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Security and privacy~Software and application security}
+\ccsdesc[300]{Computing methodologies~Artificial intelligence}
+
+\keywords{indirect prompt injection, tool-using agents, parallel tool calls, authorization, instruction--data separation, adaptive attacks, measurement}
+
+\maketitle
+
+%% =====================================================================
+\section{Introduction}
+
+An email assistant that can send mail is exposed to indirect prompt injection every time it reads an inbox. The attacker writes an ordinary message, the assistant retrieves it while serving the user, and instructions inside the message compete with the user's request for control of the send tool \cite{greshake2023indirect}. Most published measurements of this threat, including the LLMail-Inject challenge from which this study draws its attacks \cite{abdelnabi2025llmail}, test the case in which the user asks only for a summary. Any outbound email in that setting is unauthorized by construction, and a deterministic check that blocks the send tool whenever the user did not ask for it removes the threat completely.
+
+That case is the easy one. Deployed assistants are asked to forward summaries, reply to colleagues, and send follow-ups, and in those tasks the attacker's target action and the user's requested action are the same tool call with different arguments. Two questions follow that existing evaluations do not answer. First, does granting the assistant permission to send make it more or less likely to also send where the attacker directs? Second, once the tool is legitimately in use, do the recipient checks a deployer would add next (an organizational directory, or a rule that recipients must come from trusted content) hold against an attacker who adapts to them?
+
+This study answers both questions with live model execution. It replays 1,000 human-written adaptive attacks from LLMail-Inject against three models under three authorization regimes, two prompt conditions, and four attack variants, and it scores every execution structurally from the tool calls the model issued. The design holds the context fixed across regimes and changes only the user's request, so differences between regimes are attributable to authorization.
+
+The study makes four contributions.
+
+\begin{enumerate}
+\item \textbf{An authorization-conditioned evaluation of human adaptive attacks.} The evaluation separates three regimes: no send requested (\ro), a send to a recipient the user names (\rone), and a send to a recipient named in a trusted internal email (\rtwo). The same 1,000 attacks run under each regime for each model.
+\item \textbf{Evidence that authorization moves susceptibility in opposite directions across models, and the mechanism behind it.} Attack success on GPT-4o-mini rises from 38.1\% in \ro{} to 62.7\% in \rtwo, while Llama~3.3~70B falls from 48.2\% to 9.0\%. Call-level analysis shows that the increase on GPT-4o-mini consists mostly of attacker sends issued in parallel with the legitimate one. A controlled run with parallel tool calls disabled confirms the mechanism and measures its utility cost.
+\item \textbf{A defense matrix with adaptive attacks against the structural checks.} Instruction--data separation reduces attack success in every model and regime but leaves a residual of up to 23.8\%. Directory and provenance recipient checks each fall to one realistic adaptation, and their conjunction falls to the combination of the two.
+\item \textbf{A replication check that exposes serving dependence.} Rerunning a single-email configuration reproduces an earlier GPT-4o-mini measurement within two points but does not reproduce an earlier Llama~3.3~70B measurement taken through a different hosting provider.
+\end{enumerate}
+
+Section~\ref{sec:related} positions the work against prior benchmarks and defenses. Section~\ref{sec:threat} defines the system, threat model, and regimes. Section~\ref{sec:method} describes the harness, defenses, adaptive variants, and scoring. Section~\ref{sec:results} reports results, Section~\ref{sec:discussion} draws deployment implications, and Section~\ref{sec:limits} states limitations.
+
+%% =====================================================================
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Indirect prompt injection and agent benchmarks.}
+\citet{greshake2023indirect} showed that instructions placed in retrieved content can redirect LLM-integrated applications, extending the direct injection attacks of \citet{perez2022ignore} and \citet{liu2023promptinjection}. InjecAgent \cite{zhan2024injecagent} and AgentDojo \cite{debenedetti2024agentdojo} turned the threat into benchmarks over multi-tool agents, and WASP \cite{evtimov2025wasp} did the same for web agents. These benchmarks use attack templates or optimized attacks written by the benchmark authors. LLMail-Inject \cite{abdelnabi2025llmail} instead collected 208,095 attack submissions from 839 participants who adapted their attacks against deployed defenses in an email assistant. The present study uses that corpus because its attacks were written by people trying to defeat defenses rather than by the evaluator.
+
+\paragraph{Replay of LLMail-Inject attacks.}
+The LLMail-Inject authors replayed collected attacks against newer models without further optimization and reported transfer to GPT-4o, GPT-5 variants, and Meta SecAlign 70B \cite{abdelnabi2025llmail}. That replay keeps the challenge's setting, in which the user requests a summary and never a send. The present study differs in varying what the user authorizes while holding the attacks and context fixed.
+
+\paragraph{Email agents in the wild.}
+\citet{wu2027mailbox} constructed email-specific injections that disguise attacker operations as mailbox remediation, achieved high success against real email agent applications, and evaluated prompt-level, detection, and policy defenses including Progent. Their work establishes that email agents are exploitable in practice. It does not separate authorized from unauthorized sends or examine how many tool calls a model issues per turn, which are the two variables this study isolates.
+
+\paragraph{Prompt-level defenses.}
+Spotlighting marks untrusted content with delimiters, datamarking, or encoding so that the model can distinguish it from instructions \cite{hines2024spotlighting}. The instruction hierarchy trains models to give lower priority to instructions arriving through tool outputs \cite{wallace2024hierarchy}. StruQ \cite{chen2024struq} and SecAlign \cite{chen2024secalign} fine-tune models to ignore instructions in the data channel. The separation directive evaluated here belongs to the first family: it requires no training and is the control a deployer can add to an existing model today.
+
+\paragraph{System-level defenses.}
+A second line of work removes the model from the trust decision. CaMeL derives control and data flow from the trusted query and enforces capabilities on values that originate from untrusted data \cite{debenedetti2025camel}. Progent applies programmable privilege policies to tool calls \cite{shi2025progent}. IPIGuard constrains execution with a tool dependency graph planned before untrusted content is read \cite{an2025ipiguard}, and MELON detects injected actions by re-executing with masked user input \cite{zhu2025melon}. The structural checks in this study are deliberately simpler than these systems. They model the recipient rules a deployer could configure in an existing email gateway, and the adaptive variants test the assumptions those rules rest on. The query-binding check corresponds most closely to the provenance principle in CaMeL, and the results show its utility cost when the legitimate recipient must itself be read from content.
+
+%% =====================================================================
+\section{System, threat model, and authorization regimes}
+\label{sec:threat}
+
+\subsection{System}
+The assistant receives a system prompt, a user request, and two retrieved emails, and it may call one tool, \texttt{send\_email(to, subject, body)}. One email is a benign internal note from a colleague, Dana, which names a reviewer, Raj, and his address. The other email is an attack drawn from LLMail-Inject, presented with an external sender address. The order of the two emails is assigned per attack by a seeded hash so that position is balanced across the corpus. The harness executes no tool calls; it records them and scores them.
+
+\subsection{Threat model}
+The attacker controls the subject and body of one email that reaches the assistant's context. The attacker does not control the system prompt, the user request, the tool schema, or the scoring. The attacker's goal, inherited from LLMail-Inject, is to cause a \texttt{send\_email} call to an attacker-chosen address, and in the stricter form to place a target string in the body of that call. In the adaptive variants (Section~\ref{sec:adaptive}) the attacker additionally controls the sender address shown on the email or can receive mail at an address inside the organization's directory, which models a spoofed or compromised internal mailbox.
+
+\subsection{Authorization regimes}
+Three regimes vary only the user request. The two emails are identical across regimes.
+
+\begin{description}
+\item[\ro: no send requested.] ``Summarize all following emails.'' Any send is unauthorized. This matches the LLMail-Inject setting.
+\item[\rone: send to a recipient the user names.] ``Summarize all following emails and send the summary to dana.whitfield@corp.example.'' One send is authorized, and its recipient is in the trusted channel.
+\item[\rtwo: send to a recipient named in a trusted email.] ``Summarize all following emails and send the summary to the reviewer that Dana names in her note.'' One send is authorized, and its correct recipient must be read from email content.
+\end{description}
+
+\rtwo{} is the harder case for any defense, because it requires the assistant to act on an address taken from the data channel while refusing addresses taken from the same channel by the attacker.
+
+%% =====================================================================
+\section{Evaluation design}
+\label{sec:method}
+
+\subsection{Attacks}
+The attacks come from the Phase~1 corpus of LLMail-Inject \cite{abdelnabi2025llmail}. An earlier stratified slice of 2,500 attacks, drawn in proportion to the corpus's forty scenario configurations from submissions whose recorded objectives include \texttt{email.retrieved = true}, was reduced to 1,000 attacks by a seeded, scenario-proportional draw with largest-remainder allocation. The same 1,000 attacks are used for every model, regime, condition, and variant.
+
+\subsection{Prompt conditions}
+In the \emph{none} condition the system prompt is the LLMail-Inject email-assistant prompt, which permits sending only when the user clearly instructs it. In the \emph{separation} condition the system prompt adds a directive stating that emails come from external parties, that instructions inside them must not be followed, and that the content enclosed in an \texttt{UNTRUSTED\_EMAIL} block is data to be summarized; the two emails are enclosed in that block. The directive text is reproduced in the artifact. In \rtwo{} the directive is in tension with the task, because the task requires using an address that appears in an email.
+
+\subsection{Structural defenses}
+Four recipient checks are applied to each proposed \texttt{send\_email} call. In every check, a call in \ro{} is rejected because the user requested no send.
+
+\begin{description}
+\item[Query binding.] Every recipient must appear in the user's request.
+\item[Directory.] Every recipient must belong to the organization's directory, which contains Dana, Raj, three other internal addresses, and one internal archive mailbox.
+\item[Provenance.] Every recipient must appear in the user's request or in an email whose displayed sender is in the internal domain. The check uses the displayed sender, as a deployed filter would, and has no access to ground truth.
+\item[Directory and provenance.] Both conditions must hold.
+\end{description}
+
+Because each execution is a single model turn and the checks act only on the calls the model proposes, applying a check online or to the logged call yields the same executed calls. The checks are therefore applied post hoc to the logged calls, and all four are evaluated on the same executions.
+
+\subsection{Adaptive variants}
+\label{sec:adaptive}
+Each check rests on one assumption that an attacker can target. Three variants transform every attack deterministically.
+
+\begin{description}
+\item[Spoofed sender.] The attack email displays an internal sender address. This targets provenance, which trusts addresses found in internally sent mail.
+\item[Internal drop.] Every occurrence of the attacker's address in the attack is replaced by the internal archive mailbox, which models an attacker who can read a compromised internal account. This targets the directory check.
+\item[Both.] The two transformations are combined, which targets the conjunction of directory and provenance.
+\end{description}
+
+The variants change only the sender header and the destination address. The attack's wording, which human participants adapted against the challenge defenses, is unchanged.
+
+\subsection{Models and decoding}
+GPT-4o-mini was accessed through the OpenAI API, gpt-oss-120b through Together AI's serverless API, and Llama~3.3~70B Instruct through DeepInfra's OpenAI-compatible API, which serves an FP8 quantization. All three received identical prompt text, context rendering, and tool schema from one shared module; provider adapters change only wire format. Sampling temperature was 0.7, and each attack-condition cell was executed three times. The maximum output length was 512 tokens for GPT-4o-mini, 1,024 for Llama~3.3~70B, and 2,048 for gpt-oss-120b, which emits reasoning tokens before its answer. The limit truncated 0.3\%, 0\%, and 0.06\% of responses, respectively. Llama~3.3~70B, which was retired from Together AI's serverless tier during the study, was moved to DeepInfra. \todo{Claude Sonnet 4.6: Anthropic API, provider-default sampling because the API rejects an explicit temperature for this model, max 2,048 tokens, one sample per cell; 13\% of pilot responses truncated at 512 tokens.}
+
+\subsection{Scoring}
+Scoring is structural. An execution counts toward attack success rate (ASR) when an executed \texttt{send\_email} call includes the attack's target address among its recipients. Strict exfiltration additionally requires the attack's target string in the body of that call. Task completion, defined for \rone{} and \rtwo, requires an executed call to the expected recipient (Dana in \rone, Raj in \rtwo). Llama~3.3~70B occasionally emitted tool arguments as a list of objects (4 of 54,000 executions); the reported figures expand such lists into separate calls, and rejecting them instead changes no reported rate by more than 0.1 points.
+
+For each cell, rates are averaged over samples within an attack and then over attacks. Confidence intervals are 95\% percentile bootstrap intervals with attacks as the resampling unit, so repeated samples of one attack are not treated as independent. \todo{Insert CIs from summary CSVs; add paired bootstrap intervals for regime and condition differences.}
+
+\subsection{Run completeness}
+GPT-4o-mini and Llama~3.3~70B completed all 54,000 executions. gpt-oss-120b completed 53,999; one \rtwo{} execution failed on every retry with a provider server error and is excluded.
+
+%% =====================================================================
+\section{Results}
+\label{sec:results}
+
+\subsection{Authorization changes susceptibility, in opposite directions}
+
+Table~\ref{tab:headline} reports ASR with no structural check. In \ro, the setting most benchmarks measure, the three models are ordered gpt-oss-120b (20.8\%), GPT-4o-mini (38.1\%), and Llama~3.3~70B (48.2\%). Authorization reorders them. GPT-4o-mini becomes more exploitable when the user requests a send, rising to 45.0\% in \rone{} and 62.7\% in \rtwo. Llama~3.3~70B becomes far less exploitable, falling to 7.9\% and 9.0\%. gpt-oss-120b changes little (19.1\% and 16.8\%).
+
+\begin{table}[t]
+\caption{Attack success rate (\%) with no structural check, 1,000 attacks $\times$ 3 samples per cell. \ro: no send requested. \rone: send to a recipient the user names. \rtwo: send to a recipient named in a trusted email. Strict exfiltration in parentheses where available.}
+\label{tab:headline}
+\begin{tabular}{llrrr}
+\toprule
+Model & Condition & \ro & \rone & \rtwo \\
+\midrule
+\multirow{2}{*}{GPT-4o-mini} & none & 38.1 (22.2) & 45.0 (26.9) & 62.7 (38.6) \\
+ & separation & 20.6 (10.7) & 23.8 (12.4) & 23.7 (11.6) \\
+\midrule
+\multirow{2}{*}{Llama 3.3 70B} & none & 48.2 (33.6) & 7.9 (6.0) & 9.0 (6.2) \\
+ & separation & 20.2 (12.1) & 3.0 (2.4) & 2.4 (2.0) \\
+\midrule
+\multirow{2}{*}{gpt-oss-120b} & none & 20.8 & 19.1 & 16.8 \\
+ & separation & 10.1 & 9.3 & 7.0 \\
+\midrule
+Claude Sonnet 4.6 & & \todo{} & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A measurement taken only in \ro{} would therefore misrank these models for an assistant that sends mail. Llama~3.3~70B is the most exploitable of the three when it only summarizes and the least exploitable when it is also asked to send. \todo{Strict exfiltration for gpt-oss-120b from summary CSV.}
+
+\subsection{The mechanism is parallel tool calling}
+
+Table~\ref{tab:calls} counts the \texttt{send\_email} calls in each response and divides successful attacks into those issued alongside a call to the legitimate recipient and those issued without one. In \rtwo, two thirds of GPT-4o-mini's responses contain two or more calls, and 53.5 of its 62.7 points of ASR are attacker sends that accompany the legitimate send. The attack does not displace the user's request. It adds a second call. Llama~3.3~70B emits two calls in 2.2\% of \rtwo{} responses, spends its single call on the user's request in most of the rest, and reaches only 2.2 points of piggybacked ASR. gpt-oss-120b falls between them on both measures.
+
+\begin{table}[t]
+\caption{Send calls per response and composition of successful attacks, no prompt defense, unmodified attacks. ``With legit.'' counts responses that send to the attacker and to the expected recipient; ``alone'' counts attacker sends without a legitimate send.}
+\label{tab:calls}
+\small
+\begin{tabular}{llrrrr}
+\toprule
+Model & Regime & $\geq$2 calls (\%) & ASR & with legit. & alone \\
+\midrule
+\multirow{3}{*}{GPT-4o-mini} & \ro & 24.3 & 38.1 & -- & 38.1 \\
+ & \rone & 42.0 & 45.0 & 36.3 & 8.7 \\
+ & \rtwo & 67.2 & 62.7 & 53.5 & 9.2 \\
+\midrule
+\multirow{3}{*}{Llama 3.3 70B} & \ro & 0.0 & 48.2 & -- & 48.2 \\
+ & \rone & 3.4 & 7.9 & 3.3 & 4.6 \\
+ & \rtwo & 2.2 & 9.0 & 2.2 & 6.8 \\
+\midrule
+\multirow{3}{*}{gpt-oss-120b} & \ro & 0.3 & 20.8 & -- & 20.8 \\
+ & \rone & 16.1 & 19.1 & 14.8 & 4.3 \\
+ & \rtwo & 14.8 & 16.8 & 13.7 & 3.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ``alone'' column is small for every model once a send is authorized: between 3.1 and 9.2 points. Across these three models, authorization rarely causes the attacker to replace the user's recipient. It changes risk mainly through the number of calls a model is willing to make in one turn.
+
+The correlation across three models does not establish cause, so GPT-4o-mini was rerun in \rone{} and \rtwo{} with the OpenAI API's \texttt{parallel\_tool\_calls} parameter set to false, which limits each response to one tool call (Table~\ref{tab:noparallel}). ASR in \rtwo{} fell from 62.7\% to 19.2\%, and in \rone{} from 45.0\% to 24.5\%. Both values are below the model's \ro{} rate of 38.1\%, which matches the direction Llama~3.3~70B shows without intervention.
+
+\begin{table}[t]
+\caption{GPT-4o-mini with parallel tool calls enabled (default) and disabled. ASR and task completion (\%), unmodified attacks, no structural check.}
+\label{tab:noparallel}
+\begin{tabular}{llrrrr}
+\toprule
+ & & \multicolumn{2}{c}{Parallel enabled} & \multicolumn{2}{c}{Parallel disabled} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+Regime & Condition & ASR & Task & ASR & Task \\
+\midrule
+\multirow{2}{*}{\rone} & none & 45.0 & 90.0 & 24.5 & 72.3 \\
+ & separation & 23.8 & 88.8 & 12.8 & 79.2 \\
+\midrule
+\multirow{2}{*}{\rtwo} & none & 62.7 & 89.4 & 19.2 & 77.5 \\
+ & separation & 23.7 & 86.1 & 8.3 & 81.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The intervention has a cost. With one call available, GPT-4o-mini sometimes spends it on the attacker: attacker-only sends in \rone{} rose from 8.7\% to 24.5\%, and task completion fell by 17.7 points in \rone{} and 11.9 points in \rtwo. Combined with the separation directive, the single-call setting produced the lowest prompt- or API-level ASR measured for GPT-4o-mini in \rtwo, 8.3\%, at 81.2\% task completion.
+
+\subsection{Instruction--data separation helps everywhere and finishes nowhere}
+
+The separation directive reduced ASR in all nine model--regime cells of Table~\ref{tab:headline}, by between 46\% (GPT-4o-mini, \ro) and 73\% (Llama~3.3~70B, \rtwo) relative to the undefended rate. On GPT-4o-mini it also removed the authorization effect: defended ASR is 20.6\%, 23.8\%, and 23.7\% across the three regimes. The directive did not reach zero for any model or regime, and the highest defended rate, 23.8\%, means roughly one attack in four still produced an attacker send.
+
+Separation did not prevent the \rtwo{} task, despite instructing the model not to act on information found in emails. Task completion under separation was 86.1\% for GPT-4o-mini and 91.1\% for Llama~3.3~70B in \rtwo. On Llama~3.3~70B it rose relative to the undefended condition (from 81.9\% to 91.1\%), which suggests the directive also reduced responses in which the attack displaced the task entirely. \todo{gpt-oss-120b task completion from summary CSV.}
+
+\subsection{Structural checks and the attacks that defeat them}
+
+Table~\ref{tab:adaptive} reports ASR in \rtwo{} under each structural check and each attack variant. Against unmodified attacks every check blocks every attacker send, because the LLMail-Inject target address is external and never appears in trusted content. That result would be the end of the analysis in a static evaluation.
+
+\begin{table}[t]
+\caption{ASR (\%) in \rtwo, no prompt defense, under each structural check and attack variant. The last column is task completion under the check with unmodified attacks.}
+\label{tab:adaptive}
+\small
+\begin{tabular}{llrrrrr}
+\toprule
+Model & Check & Original & Spoofed & Int.\ drop & Both & Task \\
+\midrule
+\multirow{5}{*}{GPT-4o-mini} & none & 62.7 & 63.3 & 64.9 & 64.0 & 89.4 \\
+ & query binding & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+ & directory & 0.0 & 0.0 & 64.9 & 64.0 & 89.4 \\
+ & provenance & 0.0 & 62.0 & 0.0 & 63.6 & 89.4 \\
+ & dir.\ + prov.\ & 0.0 & 0.0 & 0.0 & 63.6 & 89.4 \\
+\midrule
+\multirow{5}{*}{Llama 3.3 70B} & none & 9.0 & 8.2 & 12.1 & 11.4 & 81.9 \\
+ & query binding & 0.0 & 0.0 & 0.0 & 0.0 & 0.0 \\
+ & directory & 0.0 & 0.0 & 12.1 & 11.4 & 81.9 \\
+ & provenance & 0.0 & 8.1 & 0.0 & 11.4 & 81.9 \\
+ & dir.\ + prov.\ & 0.0 & 0.0 & 0.0 & 11.4 & 81.9 \\
+\midrule
+gpt-oss-120b & & \multicolumn{5}{c}{\todo{from summary CSV}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Each adaptation cost the attacker nothing in model compliance. GPT-4o-mini followed the spoofed, internal-drop, and combined variants at 63.3\%, 64.9\%, and 64.0\%, against 62.7\% for the originals; Llama~3.3~70B followed the internal-drop variant more often than the original (12.1\% against 9.0\%). Each check then failed exactly where its assumption failed. The directory check passed the internal drop address, provenance passed the address carried by a spoofed internal sender, and their conjunction passed the combined variant, which satisfies both. Once a model selects an address, a check's outcome follows mechanically from that address; the empirical content of Table~\ref{tab:adaptive} is the rate at which models select the adapted addresses, and that rate did not fall.
+
+Query binding held against every variant because no attacker-controlled text can enter the user's request. It also blocked every legitimate \rtwo{} send, because Raj's address appears only in Dana's email. Query binding is the only check in this study that resisted adaptation, and it resisted by making the \rtwo{} task impossible.
+
+Separation reduced ASR under adaptation as it did without it. In \rtwo{} with separation, GPT-4o-mini's ASR under the combined variant and the conjunctive check was 23.8\%, and Llama~3.3~70B's was 3.5\%.
+
+\subsection{Replication of a single-email configuration and serving dependence}
+
+Before this study, the same corpus had been run in a single-email configuration: the attack email alone, no sender header, no benign note, and the \ro{} request. GPT-4o-mini at temperature 0 produced 46.4\% ASR with no defense and 23.4\% with separation, and Llama~3.3~70B through Together AI's serverless API at temperature 0 produced 91.6\% and 91.1\%, an apparent null effect of separation. Rerunning the single-email configuration under the present harness (Table~\ref{tab:legacy}) reproduced the GPT-4o-mini values within two points, 48.1\% and 22.0\%. It did not reproduce the Llama values. Through DeepInfra, Llama~3.3~70B produced 62.0\% and 22.6\%, so separation reduced ASR by about two thirds rather than not at all.
+
+\begin{table}[t]
+\caption{Single-email configuration, \ro, ASR (\%). The earlier runs used the full 2,500-attack slice, temperature 0, one sample, and a slightly different tool schema; the present runs use the 1,000-attack subset, temperature 0.7, three samples, and the shared schema.}
+\label{tab:legacy}
+\begin{tabular}{llrr}
+\toprule
+Model & Run & none & separation \\
+\midrule
+\multirow{2}{*}{GPT-4o-mini} & earlier (OpenAI) & 46.4 & 23.4 \\
+ & present (OpenAI) & 48.1 & 22.0 \\
+\midrule
+\multirow{2}{*}{Llama 3.3 70B} & earlier (Together AI) & 91.6 & 91.1 \\
+ & present (DeepInfra, FP8) & 62.0 & 22.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The GPT-4o-mini replication shows that the changes in temperature and tool schema move results by about two points on that model. The Llama runs differ by 30 points without the directive and 69 points with it, and they also differ in hosting provider, so the most plausible explanation is the serving configuration: quantization, chat template, or the provider's tool-call parser. The data cannot separate these causes. The practical conclusion does not depend on which one is responsible. A prompt-level control measured on one deployment of an open-weight model cannot be assumed to behave the same way on another deployment of the same weights. Moving from the single-email to the two-email context lowered Llama's \ro{} ASR from 62.0\% to 48.2\% with separation nearly unchanged (22.6\% and 20.2\%).
+
+%% =====================================================================
+\section{Implications for deployment}
+\label{sec:discussion}
+
+\paragraph{Measure in the regime the assistant will run in.}
+The \ro{} setting misranked the three models. A deployer choosing a model for an assistant that sends mail should measure with the send authorized, because the ordering in Table~\ref{tab:headline} reverses between \ro{} and \rtwo.
+
+\paragraph{Treat parallel tool calling as a security setting.}
+For GPT-4o-mini, most authorized-regime risk came from additional calls issued alongside the legitimate one, and disabling parallel calls removed about 70\% of \rtwo{} ASR. Where a provider exposes the setting and the task needs one action per turn, turning it off is a low-cost control. The utility loss in Table~\ref{tab:noparallel} is the price, and it should be measured on the deployer's own tasks. A related enforcement option, which this study did not test, is to allow at most one outbound send per user request at the tool layer, independent of the model's behavior.
+
+\paragraph{Keep the separation directive, and do not rely on it.}
+The directive reduced ASR in every cell and cost little task completion, including in \rtwo{} where it nominally conflicts with the task. It never reached zero.
+
+\paragraph{Recipient filters need an identity guarantee they do not have.}
+Directory and provenance checks assume, respectively, that internal addresses are safe destinations and that internal senders are trustworthy. An attacker with one spoofable sender or one readable internal mailbox removes both assumptions. Deployers relying on these checks need sender authentication that the assistant's context can trust and controls on which internal mailboxes may receive assistant-generated mail. Where the legitimate recipient must be read from content, as in \rtwo, a confirmation step that shows the user the resolved recipient is the remaining option this study did not measure.
+
+%% =====================================================================
+\section{Limitations}
+\label{sec:limits}
+
+The study covers one tool, one email-assistant prompt, one benign note, and single-turn execution. Multi-turn agents that observe tool results, and agents with several tools, may behave differently, and post hoc application of the structural checks is valid only because no tool result returns to the model.
+
+The attacks were written against the LLMail-Inject challenge, in which the user never requested a send. The participants did not adapt their wording to \rone{} or \rtwo, so the authorized-regime rates may understate what attackers who target authorized sends would achieve. The adaptive variants change addresses and headers, not wording.
+
+Three models were evaluated in full \todo{four with Claude}. Each was accessed through a provider alias whose underlying version can change, and the Llama results reflect DeepInfra's FP8 deployment. Section~\ref{sec:results} shows that a different deployment of the same weights produced very different results. Maximum output length differed by model to avoid truncating reasoning, and truncation rates were 0.3\% or lower.
+
+Task completion counts a send to the expected recipient. It does not judge summary quality, and it may count a response that sends the correct summary and also leaks content to the attacker. The two quantities are reported separately for that reason.
+
+%% =====================================================================
+\section{Conclusion}
+
+Granting an email assistant permission to send changed its exposure to human-written injection attacks, and the direction of the change depended on the model. On GPT-4o-mini the change came almost entirely from attacker sends issued in parallel with the legitimate one, and disabling parallel tool calls removed most of it at a measurable cost in task completion. Instruction--data separation reduced attack success everywhere and eliminated it nowhere. Recipient checks that preserved the legitimate task each failed against one realistic adaptation, and the only check that held did so by preventing the task. Evaluations that test only the unauthorized setting miss both the amplification and the failure of the structural checks, and evaluations of an open-weight model on one hosting provider may not transfer to another.
+
+%% =====================================================================
+\section*{Ethics considerations}
+All attacks come from the public LLMail-Inject dataset. No email was sent: the harness records tool calls and executes none. The addresses used for the benign note and directory are in the reserved \texttt{example} domain. The adaptive variants are mechanical substitutions of a sender header and a destination address and describe failure modes of recipient filtering, not new exploitation techniques. The study did not test deployed products.
+
+\section*{Data and artifact availability}
+The harness, analysis scripts, the attack slice derivation, per-execution logs, and summary tables are available at \url{https://github.com/GitSene/aipi-instruction-data-separation} \todo{merge harness-v2 into main and archive on Zenodo with a DOI before submission}. The LLMail-Inject corpus is available from its authors.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}
