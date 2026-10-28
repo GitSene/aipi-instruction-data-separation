@@ -20,8 +20,9 @@ from . import prompts as P
 class OpenAICompatible:
     """OpenAI, and OpenAI-compatible hosts (Together AI) via OPENAI_BASE_URL."""
 
-    def __init__(self) -> None:
+    def __init__(self, parallel_tool_calls: bool | None = None) -> None:
         from openai import AsyncOpenAI
+        self.parallel = parallel_tool_calls   # None = provider default (not sent)
         self.client = AsyncOpenAI(base_url=os.environ.get("OPENAI_BASE_URL") or None,
                                   api_key=os.environ.get("OPENAI_API_KEY"))
         self.tool = {"type": "function", "function": {
@@ -34,7 +35,8 @@ class OpenAICompatible:
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
             tools=[self.tool], tool_choice="auto", max_tokens=max_tokens,
-            **({} if temperature is None else {"temperature": temperature}))
+            **({} if temperature is None else {"temperature": temperature}),
+            **({} if self.parallel is None else {"parallel_tool_calls": self.parallel}))
         ch = resp.choices[0]
         calls = []
         for tc in ch.message.tool_calls or []:
@@ -100,9 +102,9 @@ class Mock:
                 "stop_reason": "mock", "usage": {}}
 
 
-def make_provider(name: str):
+def make_provider(name: str, parallel_tool_calls: bool | None = None):
     if name == "openai":
-        return OpenAICompatible()
+        return OpenAICompatible(parallel_tool_calls)
     if name == "anthropic":
         return Anthropic()
     if name == "mock":

@@ -92,7 +92,7 @@ async def main_async(a) -> None:
     random.Random(a.seed).shuffle(cells)          # spread provider drift across conditions
     logging.info("pending cells: %d (done %d)", len(cells), len(done))
 
-    provider = make_provider(a.provider)
+    provider = make_provider(a.provider, False if a.no_parallel_tools else None)
     sem, lock = asyncio.Semaphore(a.concurrency), asyncio.Lock()
     fh = open(out, "a", encoding="utf-8")
     n, t0 = 0, time.time()
@@ -110,7 +110,8 @@ async def main_async(a) -> None:
                "sample": s, "note_first": P.note_first(atk["_id"], a.seed),
                "provider": a.provider, "model": a.model,
                "temperature": a.temperature, "max_tokens": a.max_tokens,
-               "seed": a.seed, "marker": atk["_marker"], "context": a.context}
+               "seed": a.seed, "marker": atk["_marker"], "context": a.context,
+               "parallel_tool_calls": False if a.no_parallel_tools else "default"}
         async with sem:
             delay, err = 1.0, None
             for _ in range(a.max_retries):
@@ -165,7 +166,14 @@ def main() -> None:
     p.add_argument("--out-dir", default="results_v2")
     p.add_argument("--context", choices=["two_email", "legacy"], default="two_email",
                    help="legacy = original paper's single-email context (R0 only; ablation)")
+    p.add_argument("--no-parallel-tools", action="store_true",
+                   help="ask the provider for at most one tool call per response (OpenAI only)")
     a = p.parse_args()
+    if a.no_parallel_tools:
+        if a.provider != "openai":
+            raise SystemExit("--no-parallel-tools is supported for --provider openai only")
+        if "noparallel" not in a.out_dir:
+            raise SystemExit("use an output directory whose name contains 'noparallel'")
     if a.context == "legacy":
         if a.regimes != ["R0"] or a.transforms != ["none"]:
             raise SystemExit("--context legacy requires --regimes R0 --transforms none")
