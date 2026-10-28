@@ -24,9 +24,11 @@ class OpenAICompatible:
     def __init__(self, parallel_tool_calls: bool | None = None) -> None:
         from openai import AsyncOpenAI
         self.parallel = parallel_tool_calls   # None = provider default (not sent)
-        base = (os.environ.get("OPENAI_BASE_URL") or "").strip().strip('"') or None
+        # Pass an explicit URL: with base_url=None the SDK re-reads OPENAI_BASE_URL
+        # itself, including a blank or space-only value left by `set VAR= `.
+        base = (os.environ.get("OPENAI_BASE_URL") or "").strip().strip('"') or "https://api.openai.com/v1"
         key = (os.environ.get("OPENAI_API_KEY") or "").strip().strip('"')
-        logging.info("OpenAI-compatible endpoint: %s", base or "https://api.openai.com/v1 (default)")
+        logging.info("OpenAI-compatible endpoint: %s", base)
         self.client = AsyncOpenAI(base_url=base, api_key=key)
         self.tool = {"type": "function", "function": {
             "name": P.TOOL_NAME, "description": P.TOOL_DESCRIPTION,
