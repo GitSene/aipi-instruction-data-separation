@@ -69,7 +69,8 @@ def main() -> None:
                 continue
             n_malformed += malformed(r["calls"])
             atk = dict(attacks[r["id"]], _id=r["id"])
-            emails = [e.__dict__ for e in P.build_context(atk, r["transform"], r["seed"])]
+            emails = ([] if r.get("context") == "legacy" else
+                      [e.__dict__ for e in P.build_context(atk, r["transform"], r["seed"])])
             for d in DEFENSES:
                 executed = apply_defense(d, r["regime"], emails, r["calls"])
                 o = outcomes(r["regime"], r["transform"], r["marker"], executed)

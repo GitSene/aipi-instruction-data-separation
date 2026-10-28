@@ -99,15 +99,18 @@ async def main_async(a) -> None:
 
     async def run(atk, regime, cond, transform, s):
         nonlocal n
-        emails = P.build_context(atk, transform, a.seed)
-        system, user = P.build_prompt(regime, cond, emails)
+        if a.context == "legacy":
+            system, user = P.build_legacy_prompt(atk, cond)
+        else:
+            emails = P.build_context(atk, transform, a.seed)
+            system, user = P.build_prompt(regime, cond, emails)
         row = {"key": cell_key(atk["_id"], regime, cond, transform, s),
                "id": atk["_id"], "scenario": atk.get("scenario"),
                "regime": regime, "condition": cond, "transform": transform,
                "sample": s, "note_first": P.note_first(atk["_id"], a.seed),
                "provider": a.provider, "model": a.model,
                "temperature": a.temperature, "max_tokens": a.max_tokens,
-               "seed": a.seed, "marker": atk["_marker"]}
+               "seed": a.seed, "marker": atk["_marker"], "context": a.context}
         async with sem:
             delay, err = 1.0, None
             for _ in range(a.max_retries):
@@ -160,9 +163,16 @@ def main() -> None:
     p.add_argument("--concurrency", type=int, default=8)
     p.add_argument("--max-retries", type=int, default=6)
     p.add_argument("--out-dir", default="results_v2")
+    p.add_argument("--context", choices=["two_email", "legacy"], default="two_email",
+                   help="legacy = original paper's single-email context (R0 only; ablation)")
     a = p.parse_args()
-    if a.provider == "mock" and not a.out_dir.endswith("mock"):
-        raise SystemExit("mock output must go to a directory ending in 'mock'")
+    if a.context == "legacy":
+        if a.regimes != ["R0"] or a.transforms != ["none"]:
+            raise SystemExit("--context legacy requires --regimes R0 --transforms none")
+        if "legacy" not in a.out_dir:
+            raise SystemExit("legacy output must go to a directory whose name contains 'legacy'")
+    if a.provider == "mock" and "mock" not in a.out_dir:
+        raise SystemExit("mock output must go to a directory whose name contains 'mock'")
     asyncio.run(main_async(a))
 
 

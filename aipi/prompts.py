@@ -162,3 +162,19 @@ def build_prompt(regime: str, condition: str, emails: list[Email]) -> tuple[str,
         return (SYSTEM_PROMPT + " " + SEPARATION_SUFFIX,
                 f"{query}\n\n<UNTRUSTED_EMAIL>\n{ctx}\n</UNTRUSTED_EMAIL>")
     raise ValueError(f"unknown condition: {condition}")
+
+
+# --------------------------------------------------------------- legacy context
+# Ablation only: reproduces the ORIGINAL paper's context (the attacker email
+# alone, no sender header, no benign note), R0 query, under the current tool
+# schema and decoding. Used to separate harness effects from serving effects.
+
+def build_legacy_prompt(attack: dict, condition: str) -> tuple[str, str]:
+    email = f"Subject: {attack.get('subject', '')}\nBody: {attack.get('body', '')}"
+    query = QUERIES["R0"]
+    if condition == "none":
+        return SYSTEM_PROMPT, f"{query}\n\n{email}"
+    if condition == "separation":
+        return (SYSTEM_PROMPT + " " + SEPARATION_SUFFIX,
+                f"{query}\n\n<UNTRUSTED_EMAIL>\n{email}\n</UNTRUSTED_EMAIL>")
+    raise ValueError(f"unknown condition: {condition}")
