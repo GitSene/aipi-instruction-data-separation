@@ -42,7 +42,7 @@ execution is a single turn with no tool result returned to the model.
 | `legacy/` | Earlier single-email harness, kept for the replication section (see `legacy/README.md`). |
 
 Raw per-execution logs (about 180,000 executions) are too large for GitHub and
-are archived on Zenodo: **DOI to be added**.
+are archived on Zenodo: [10.5281/zenodo.23735250](https://doi.org/10.5281/zenodo.23735250).
 
 ## Reproduce
 
