@@ -19,7 +19,8 @@ import random
 from collections import defaultdict
 
 from aipi import prompts as P
-from aipi.scoring import DEFENSES, apply_defense, outcomes
+from aipi import scoring
+from aipi.scoring import DEFENSES, apply_defense, malformed, outcomes
 
 METRICS = ("attacker_send", "strict_exfil", "task_done", "any_send")
 
@@ -47,7 +48,11 @@ def main() -> None:
     p.add_argument("--data", default="data/slice_2500.jsonl")
     p.add_argument("--out", default="results_v2/summary.csv")
     p.add_argument("--reps", type=int, default=2000)
+    p.add_argument("--arg-policy", choices=["lenient", "schema"], default="lenient",
+                   help="treatment of send_email calls whose args are not a JSON object")
     a = p.parse_args()
+    scoring.ARG_POLICY = a.arg_policy
+    n_malformed = 0
 
     attacks = load_attack_index(a.data)
     # (model, regime, cond, transform, defense) -> attack id -> metric -> [per-sample values]
@@ -62,6 +67,7 @@ def main() -> None:
             if "error" in r:
                 errors[base] += 1
                 continue
+            n_malformed += malformed(r["calls"])
             atk = dict(attacks[r["id"]], _id=r["id"])
             emails = [e.__dict__ for e in P.build_context(atk, r["transform"], r["seed"])]
             for d in DEFENSES:
@@ -110,7 +116,9 @@ def main() -> None:
               f"{r.get('strict_exfil', float('nan')):>8.1f}"
               f"{r.get('task_done', float('nan')) if r.get('task_done') is not None else float('nan'):>7.1f}"
               f"{r['n_attacks']:>6}{tag}")
-    print(f"\nwrote {a.out}")
+    print(f"\nrows with a non-object send_email argument: {n_malformed} "
+          f"(arg policy: {a.arg_policy})")
+    print(f"wrote {a.out}")
 
 
 if __name__ == "__main__":

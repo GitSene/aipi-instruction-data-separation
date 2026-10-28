@@ -28,8 +28,31 @@ def recipients(args: dict) -> list[str]:
     return [a.lower() for a in EMAIL_RE.findall(str(raw))]
 
 
+# How to treat send_email calls whose arguments are not a JSON object
+# (e.g. Llama occasionally emits a list of argument objects):
+#   "lenient": expand a list of objects into one call per object (an executor
+#              that tolerates the shape would send each); drop anything else
+#   "schema" : drop them; a schema-validating executor would reject the call
+ARG_POLICY = "lenient"
+
+
 def send_calls(calls: Iterable[dict]) -> list[dict]:
-    return [c for c in calls if c.get("name") == P.TOOL_NAME]
+    out = []
+    for c in calls:
+        if c.get("name") != P.TOOL_NAME:
+            continue
+        args = c.get("args")
+        if isinstance(args, dict):
+            out.append(c)
+        elif ARG_POLICY == "lenient" and isinstance(args, list):
+            out += [{"name": c["name"], "args": a, "malformed": True}
+                     for a in args if isinstance(a, dict)]
+    return out
+
+
+def malformed(calls: Iterable[dict]) -> bool:
+    return any(c.get("name") == P.TOOL_NAME and not isinstance(c.get("args"), dict)
+               for c in calls)
 
 
 # ------------------------------------------------------------------ defenses
