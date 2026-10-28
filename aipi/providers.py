@@ -10,6 +10,7 @@ Every adapter returns:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import random
 from typing import Any
@@ -23,8 +24,10 @@ class OpenAICompatible:
     def __init__(self, parallel_tool_calls: bool | None = None) -> None:
         from openai import AsyncOpenAI
         self.parallel = parallel_tool_calls   # None = provider default (not sent)
-        self.client = AsyncOpenAI(base_url=os.environ.get("OPENAI_BASE_URL") or None,
-                                  api_key=os.environ.get("OPENAI_API_KEY"))
+        base = (os.environ.get("OPENAI_BASE_URL") or "").strip().strip('"') or None
+        key = (os.environ.get("OPENAI_API_KEY") or "").strip().strip('"')
+        logging.info("OpenAI-compatible endpoint: %s", base or "https://api.openai.com/v1 (default)")
+        self.client = AsyncOpenAI(base_url=base, api_key=key)
         self.tool = {"type": "function", "function": {
             "name": P.TOOL_NAME, "description": P.TOOL_DESCRIPTION,
             "parameters": P.TOOL_PARAMETERS}}
